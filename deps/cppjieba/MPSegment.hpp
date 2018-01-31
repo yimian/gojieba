@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 #include <cassert>
+#include <regex>
 #include "limonp/Logging.hpp"
 #include "DictTrie.hpp"
 #include "SegmentTagged.hpp"
@@ -61,7 +62,32 @@ class MPSegment: public SegmentTagged {
           end, 
           dags,
           max_word_len);
+    /* test
+    std::cerr.precision(17);
+    for (vector<Dag>::const_iterator it = dags.begin(); it != dags.end(); it++) {
+      std::cerr << it->runestr.rune << ' ' << it->runestr.offset << ' ' <<it->runestr.len;
+      std::cerr << it->weight;
+      for (LocalVector<pair<size_t, const DictUnit*> >::const_iterator nit = it->nexts.begin(); nit != it->nexts.end(); nit++) {
+        if (nit->second) {
+          std::cerr << " nexts:" << nit->first << ' ' << nit->second->weight;
+        }
+      }
+      std::cerr << endl;
+      // XLOG(ERROR) << it->runestr << it->weight << it->pInfo->word << it->pInfo->weight;
+    }
+    */
     CalcDP(dags);
+    /* test
+    for (vector<Dag>::const_iterator it = dags.begin(); it != dags.end(); it++) {
+      std::cerr << it->nextPos << " " << it->weight;
+      if (it->pInfo) {
+        std::cerr << " " << it->pInfo->word.size() << endl;
+      } else {
+        std::cerr << " null" << endl;
+      }
+    }
+    std::cerr << dictTrie_->GetMinWeight() << endl;
+    */
     CutByDag(begin, end, dags, words);
   }
 
@@ -99,11 +125,14 @@ class MPSegment: public SegmentTagged {
         } else {
           val += dictTrie_->GetMinWeight();
         }
-        if (val > rit->weight) {
+        // test std::cerr << val << " ";
+        if (val >= rit->weight) {
           rit->pInfo = p;
           rit->weight = val;
+          rit->nextPos = nextPos;
         }
       }
+      // test std::cerr << endl;
     }
   }
   void CutByDag(RuneStrArray::const_iterator begin, 
@@ -111,25 +140,48 @@ class MPSegment: public SegmentTagged {
         const vector<Dag>& dags, 
         vector<WordRange>& words) const {
     size_t i = 0;
+    size_t buf_len = 0;
     while (i < dags.size()) {
       const DictUnit* p = dags[i].pInfo;
       if (p) {
         assert(p->word.size() >= 1);
+        if (buf_len > 0) {
+          WordRange wr(begin + i - buf_len, begin + i - 1);
+          words.push_back(wr);
+          buf_len = 0;
+        }
         WordRange wr(begin + i, begin + i + p->word.size() - 1);
         words.push_back(wr);
         i += p->word.size();
       } else { //single chinese word
+        // deal with alnum character
+        const uint32_t c = dags[i].runestr.rune;
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+          buf_len += 1;
+          // test std::cerr << "aaa " << i << " " << c << " " << buf_len << endl;
+          i++;
+          continue;
+        }
+        if (buf_len > 0) {
+          // test std::cerr << "alnum " << i << " " << buf_len << endl;
+          WordRange wr(begin + i - buf_len, begin + i - 1);
+          words.push_back(wr);
+          buf_len = 0;
+        }
         WordRange wr(begin + i, begin + i);
         words.push_back(wr);
         i++;
       }
     }
+    if (buf_len > 0) {
+      WordRange wr(begin + i - buf_len, begin + i - 1);
+      words.push_back(wr);
+      buf_len = 0;
+    }
   }
-
   const DictTrie* dictTrie_;
   bool isNeedDestroy_;
   PosTagger tagger_;
-
 }; // class MPSegment
 
 } // namespace cppjieba
