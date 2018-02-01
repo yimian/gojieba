@@ -62,6 +62,7 @@ class MPSegment: public SegmentTagged {
           end, 
           dags,
           max_word_len);
+    /* test
     std::cerr.precision(17);
     for (vector<Dag>::const_iterator it = dags.begin(); it != dags.end(); it++) {
       std::cerr << it->runestr.rune << ' ' << it->runestr.offset << ' ' <<it->runestr.len;
@@ -74,7 +75,9 @@ class MPSegment: public SegmentTagged {
       std::cerr << endl;
       // XLOG(ERROR) << it->runestr << it->weight << it->pInfo->word << it->pInfo->weight;
     }
+    */
     CalcDP(dags);
+    /* test
     for (vector<Dag>::const_iterator it = dags.begin(); it != dags.end(); it++) {
       std::cerr << it->nextPos << " " << it->weight;
       if (it->pInfo) {
@@ -83,7 +86,8 @@ class MPSegment: public SegmentTagged {
         std::cerr << " null" << endl;
       }
     }
-    std::cerr << dictTrie_->GetMinWeight() << endl;
+    */
+    // test std::cerr << dictTrie_->GetMinWeight() << endl;
     CutByDag(begin, end, dags, words);
   }
 
