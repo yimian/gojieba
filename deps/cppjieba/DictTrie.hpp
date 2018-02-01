@@ -72,13 +72,21 @@ class DictTrie {
  private:
   void Init(const string& dict_path, const string& user_dict_paths, UserWordWeightOption user_word_weight_opt) {
     LoadDict(dict_path);
+    if (user_dict_paths.size()) {
+      // test cerr << "load user dict:" << user_dict_paths << endl;
+      LoadDict(user_dict_paths);
+    }
     freq_sum_ = CalcFreqSum(static_node_infos_);
+    // test cerr.precision(16);
+    // test cerr << "total:" << freq_sum_ << endl;
     CalculateWeight(static_node_infos_, freq_sum_);
     SetStaticWordWeights(user_word_weight_opt);
 
+    /*
     if (user_dict_paths.size()) {
       LoadUserDict(user_dict_paths);
     }
+    */
     Shrink(static_node_infos_);
     CreateTrie(static_node_infos_);
   }
@@ -158,11 +166,21 @@ class DictTrie {
     for (size_t lineno = 0; getline(ifs, line); lineno++) {
       Split(line, buf, " ");
       XCHECK(buf.size() == DICT_COLUMN_NUM) << "split result illegal, line:" << line;
+      /*
+      map<string, DictUnit*>::iterator it = kws_.find(buf[0]);
+      if (it != kws_.end()) {
+        cerr << "found: " << buf[0] << endl;
+        it->second->weight = atof(buf[1].c_str());
+        it->second->tag = buf[2];
+      } else {
+        */
       MakeNodeInfo(node_info, 
             buf[0], 
             atof(buf[1].c_str()), 
             buf[2]);
       static_node_infos_.push_back(node_info);
+        //kws_[buf[0]] = &node_info;
+      //}
     }
   }
 
@@ -213,6 +231,7 @@ class DictTrie {
 
   vector<DictUnit> static_node_infos_;
   deque<DictUnit> active_node_infos_; // must not be vector
+  map<string, DictUnit*> kws_;  // test, not used
   Trie * trie_;
 
   double freq_sum_;
