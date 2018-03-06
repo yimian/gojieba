@@ -117,7 +117,7 @@ class DictTrie {
           continue;
         }
         buf.clear();
-        Split(line, buf, " ");
+        Split(line, buf, "\t");
         DictUnit node_info;
         if(buf.size() == 1){
           MakeNodeInfo(node_info, 
@@ -164,7 +164,7 @@ class DictTrie {
 
     DictUnit node_info;
     for (size_t lineno = 0; getline(ifs, line); lineno++) {
-      Split(line, buf, " ");
+      Split(line, buf, "\t");
       XCHECK(buf.size() == DICT_COLUMN_NUM) << "split result illegal, line:" << line;
       /*
       map<string, DictUnit*>::iterator it = kws_.find(buf[0]);
